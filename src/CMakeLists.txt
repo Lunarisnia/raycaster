@@ -5,6 +5,9 @@
 add_executable(${PROJECT_NAME} 
 	main.cpp 
 
+	# FirstExample
+	first_example/app.cpp
+
 	# core/shader/shader.cpp
 
 	# Imgui
