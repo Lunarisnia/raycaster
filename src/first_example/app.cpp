@@ -1,6 +1,5 @@
 #include "first_example/app.hpp"
 #include <cstdint>
-#include <format>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -41,7 +40,7 @@ void HelloTriangleApplication::createInstance() {
 
   glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-  std::vector<const char*> requiredExtensions;
+  std::vector<const char *> requiredExtensions;
   for (uint32_t i = 0; i < glfwExtensionCount; i++) {
     requiredExtensions.emplace_back(glfwExtensions[i]);
   }
@@ -63,6 +62,19 @@ void HelloTriangleApplication::createInstance() {
   }
 }
 
+void HelloTriangleApplication::checkAvailableExtensions() {
+  uint32_t extensionCount = 0;
+  vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+
+  std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+  vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
+                                         availableExtensions.data());
+  std::cout << "Available extension:" << std::endl;
+  for (const VkExtensionProperties &extension : availableExtensions) {
+    std::cout << '\t' << extension.extensionName << std::endl;
+  }
+}
+
 void HelloTriangleApplication::mainLoop() {
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
@@ -70,6 +82,7 @@ void HelloTriangleApplication::mainLoop() {
 }
 
 void HelloTriangleApplication::cleanup() {
+  vkDestroyInstance(instance, nullptr);
   glfwDestroyWindow(window);
   glfwTerminate();
 }

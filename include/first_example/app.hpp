@@ -21,6 +21,8 @@ class HelloTriangleApplication {
   void mainLoop();
   void cleanup();
 
+  void checkAvailableExtensions();
+
  public:
   void Run();
 };
