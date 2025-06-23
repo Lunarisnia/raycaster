@@ -1,5 +1,6 @@
 #include "first_example/app.hpp"
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -26,6 +27,11 @@ void HelloTriangleApplication::initWindow() {
 void HelloTriangleApplication::initVulkan() { createInstance(); }
 
 void HelloTriangleApplication::createInstance() {
+  validationLayers.emplace_back("VK_LAYER_KHRONOS_validation");
+  if (enableValidationLayers && !checkValidationLayerSupport()) {
+    throw std::runtime_error("validation layers requested but not available");
+  }
+
   VkApplicationInfo appInfo{};
   appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   appInfo.pApplicationName = "Hello Triangle";
@@ -53,8 +59,13 @@ void HelloTriangleApplication::createInstance() {
   createInfo.enabledExtensionCount = requiredExtensions.size();
   createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
-  // Will look into this later
+  // This is for validation layers
   createInfo.enabledLayerCount = 0;
+
+  if (enableValidationLayers) {
+    createInfo.enabledLayerCount = validationLayers.size();
+    createInfo.ppEnabledLayerNames = validationLayers.data();
+  }
 
   VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
   if (result != VK_SUCCESS) {
@@ -73,6 +84,29 @@ void HelloTriangleApplication::checkAvailableExtensions() {
   for (const VkExtensionProperties &extension : availableExtensions) {
     std::cout << '\t' << extension.extensionName << std::endl;
   }
+}
+
+bool HelloTriangleApplication::checkValidationLayerSupport() {
+  uint32_t layerCount;
+  vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+  std::vector<VkLayerProperties> availableLayers(layerCount);
+  vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+  for (const char *&layerName : validationLayers) {
+    bool found = false;
+    for (VkLayerProperties &layer : availableLayers) {
+      if (strcmp(layer.layerName, layerName) == 0) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void HelloTriangleApplication::mainLoop() {

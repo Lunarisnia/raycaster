@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #define GLFW_INCLUDE_VULKAN
 #include <cstdint>
 #include "GLFW/glfw3.h"
@@ -13,6 +14,8 @@ class HelloTriangleApplication {
 
   uint32_t glfwExtensionCount = 0;
   const char** glfwExtensions;
+  std::vector<const char*> validationLayers;
+  const bool enableValidationLayers = true;
 
  private:
   void initWindow();
@@ -22,6 +25,7 @@ class HelloTriangleApplication {
   void cleanup();
 
   void checkAvailableExtensions();
+  bool checkValidationLayerSupport();
 
  public:
   void Run();
