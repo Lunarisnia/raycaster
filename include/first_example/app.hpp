@@ -24,6 +24,8 @@ class HelloTriangleApplication {
   void mainLoop();
   void cleanup();
 
+  void pickPhysicalDevice();
+  bool isDeviceSuitable(VkPhysicalDevice device);
   void checkAvailableExtensions();
   bool checkValidationLayerSupport();
 

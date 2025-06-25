@@ -24,7 +24,38 @@ void HelloTriangleApplication::initWindow() {
                             nullptr);
 }
 
-void HelloTriangleApplication::initVulkan() { createInstance(); }
+void HelloTriangleApplication::initVulkan() {
+  createInstance();
+  pickPhysicalDevice();
+}
+
+void HelloTriangleApplication::pickPhysicalDevice() {
+  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+
+  uint32_t deviceCount = 0;
+  vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+  if (deviceCount == 0) {
+    throw std::runtime_error("no compatible device found");
+  }
+
+  std::vector<VkPhysicalDevice> availableDevices(deviceCount);
+  vkEnumeratePhysicalDevices(instance, &deviceCount, availableDevices.data());
+
+  for (const VkPhysicalDevice &device : availableDevices) {
+    if (isDeviceSuitable(device)) {
+      physicalDevice = device;
+      break;
+    }
+  }
+
+  if (physicalDevice == VK_NULL_HANDLE) {
+    throw std::runtime_error("failed to find suitable GPU!");
+  }
+}
+
+bool HelloTriangleApplication::isDeviceSuitable(VkPhysicalDevice device) {
+  return true;
+}
 
 void HelloTriangleApplication::createInstance() {
   validationLayers.emplace_back("VK_LAYER_KHRONOS_validation");
