@@ -1,5 +1,7 @@
 #pragma once
+#include <optional>
 #include <vector>
+#include "vulkan/vulkan_core.h"
 #define GLFW_INCLUDE_VULKAN
 #include <cstdint>
 #include "GLFW/glfw3.h"
@@ -7,10 +9,18 @@ namespace FirstExample {
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
+struct QueueFamilyIndices {
+  std::optional<uint32_t> graphicsFamily;
+};
+
 class HelloTriangleApplication {
  private:
   GLFWwindow* window;
   VkInstance instance;
+  VkDevice device;
+  VkPhysicalDevice physicalDevice;
+  VkPhysicalDeviceFeatures deviceFeatures;
+  VkQueue graphicsQueue;
 
   uint32_t glfwExtensionCount = 0;
   const char** glfwExtensions;
@@ -26,6 +36,8 @@ class HelloTriangleApplication {
 
   void pickPhysicalDevice();
   bool isDeviceSuitable(VkPhysicalDevice device);
+  QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+  void createLogicalDevice();
   void checkAvailableExtensions();
   bool checkValidationLayerSupport();
 
