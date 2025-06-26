@@ -21,6 +21,7 @@ class HelloTriangleApplication {
   VkPhysicalDevice physicalDevice;
   VkPhysicalDeviceFeatures deviceFeatures;
   VkQueue graphicsQueue;
+  VkSurfaceKHR surface;
 
   uint32_t glfwExtensionCount = 0;
   const char** glfwExtensions;
@@ -40,6 +41,7 @@ class HelloTriangleApplication {
   void createLogicalDevice();
   void checkAvailableExtensions();
   bool checkValidationLayerSupport();
+  void createSurface();
 
  public:
   void Run();

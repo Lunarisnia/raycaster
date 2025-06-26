@@ -28,6 +28,7 @@ void HelloTriangleApplication::initVulkan() {
   createInstance();
   pickPhysicalDevice();
   createLogicalDevice();
+  createSurface();
 }
 
 void HelloTriangleApplication::createLogicalDevice() {
@@ -199,14 +200,24 @@ bool HelloTriangleApplication::checkValidationLayerSupport() {
   return true;
 }
 
+void HelloTriangleApplication::createSurface() {
+  if (glfwCreateWindowSurface(instance, window, nullptr, &surface) !=
+      VK_SUCCESS) {
+    throw std::runtime_error("failed to create surface");
+  }
+}
+
 void HelloTriangleApplication::mainLoop() {
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
   }
 }
 
+// FIXME: something wanted to be freed
 void HelloTriangleApplication::cleanup() {
   vkDestroyDevice(device, nullptr);
+  vkDestroyInstance(instance, nullptr);
+  vkDestroySurfaceKHR(instance, surface, nullptr);
   vkDestroyInstance(instance, nullptr);
   glfwDestroyWindow(window);
   glfwTerminate();
