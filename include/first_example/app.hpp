@@ -11,6 +11,13 @@ const uint32_t HEIGHT = 600;
 
 struct QueueFamilyIndices {
   std::optional<uint32_t> graphicsFamily;
+  std::optional<uint32_t> presentFamily;
+};
+
+struct SwapChainSupportDetails {
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
 };
 
 class HelloTriangleApplication {
@@ -19,10 +26,16 @@ class HelloTriangleApplication {
   VkInstance instance;
   VkDevice device;
   VkPhysicalDevice physicalDevice;
+  VkPhysicalDeviceProperties deviceProperties;
   VkPhysicalDeviceFeatures deviceFeatures;
   VkQueue graphicsQueue;
+  VkQueue presentQueue;
   VkSurfaceKHR surface;
 
+  const std::vector<const char*> deviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+      "VK_KHR_portability_subset",
+  };
   uint32_t glfwExtensionCount = 0;
   const char** glfwExtensions;
   std::vector<const char*> validationLayers;
@@ -42,6 +55,8 @@ class HelloTriangleApplication {
   void checkAvailableExtensions();
   bool checkValidationLayerSupport();
   void createSurface();
+  bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
  public:
   void Run();

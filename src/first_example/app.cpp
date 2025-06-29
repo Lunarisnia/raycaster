@@ -2,7 +2,9 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <set>
 #include <stdexcept>
+#include <string>
 #include <vector>
 #include "GLFW/glfw3.h"
 #include "vulkan/vulkan_core.h"
@@ -26,25 +28,34 @@ void HelloTriangleApplication::initWindow() {
 
 void HelloTriangleApplication::initVulkan() {
   createInstance();
+  createSurface();
   pickPhysicalDevice();
   createLogicalDevice();
-  createSurface();
 }
 
 void HelloTriangleApplication::createLogicalDevice() {
   QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
-  VkDeviceQueueCreateInfo queueCreateInfo{};
-  queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-  queueCreateInfo.queueCount = 1;
+  std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
+  std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(),
+                                            indices.presentFamily.value()};
   float queuePriority = 1.0f;
-  queueCreateInfo.pQueuePriorities = &queuePriority;
+  for (uint32_t queue : uniqueQueueFamilies) {
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = queue;
+    queueCreateInfo.queueCount = 1;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+    queueCreateInfos.emplace_back(queueCreateInfo);
+  }
 
   VkDeviceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  createInfo.pQueueCreateInfos = &queueCreateInfo;
-  createInfo.queueCreateInfoCount = 1;
+  createInfo.pQueueCreateInfos = queueCreateInfos.data();
+  createInfo.queueCreateInfoCount = queueCreateInfos.size();
+
+  createInfo.enabledExtensionCount = deviceExtensions.size();
+  createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
   createInfo.pEnabledFeatures = &deviceFeatures;
 
@@ -60,6 +71,9 @@ void HelloTriangleApplication::createLogicalDevice() {
       VK_SUCCESS) {
     throw std::runtime_error("failed to create logical device");
   }
+
+  vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+  vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 }
 
 void HelloTriangleApplication::pickPhysicalDevice() {
@@ -74,6 +88,8 @@ void HelloTriangleApplication::pickPhysicalDevice() {
 
   for (const VkPhysicalDevice &device : availableDevices) {
     if (isDeviceSuitable(device)) {
+      vkGetPhysicalDeviceProperties(device, &deviceProperties);
+      vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
       physicalDevice = device;
       break;
     }
@@ -85,13 +101,30 @@ void HelloTriangleApplication::pickPhysicalDevice() {
 }
 
 bool HelloTriangleApplication::isDeviceSuitable(VkPhysicalDevice device) {
-  VkPhysicalDeviceProperties deviceProperties;
-  vkGetPhysicalDeviceProperties(device, &deviceProperties);
-  vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
   QueueFamilyIndices indices = findQueueFamilies(device);
 
-  return indices.graphicsFamily.has_value();
+  bool extensionSupported = checkDeviceExtensionSupport(device);
+
+  return indices.graphicsFamily.has_value() && extensionSupported;
+}
+
+bool HelloTriangleApplication::checkDeviceExtensionSupport(
+    VkPhysicalDevice device) {
+  uint32_t extensionCount;
+  vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
+                                       nullptr);
+
+  std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+  vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
+                                       availableExtensions.data());
+
+  std::set<std::string> requiredExtensions{deviceExtensions.begin(),
+                                           deviceExtensions.end()};
+
+  for (const VkExtensionProperties &extension : availableExtensions) {
+    requiredExtensions.erase(extension.extensionName);
+  }
+  return requiredExtensions.empty();
 }
 
 QueueFamilyIndices HelloTriangleApplication::findQueueFamilies(
@@ -106,9 +139,14 @@ QueueFamilyIndices HelloTriangleApplication::findQueueFamilies(
                                            availableQueue.data());
 
   int i = 0;
+  VkBool32 supported = false;
   for (const VkQueueFamilyProperties &queue : availableQueue) {
     if (queue.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
       indices.graphicsFamily = i;
+    }
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &supported);
+    if (supported) {
+      indices.presentFamily = i;
     }
 
     i++;
@@ -200,6 +238,33 @@ bool HelloTriangleApplication::checkValidationLayerSupport() {
   return true;
 }
 
+SwapChainSupportDetails HelloTriangleApplication::querySwapChainSupport(
+    VkPhysicalDevice device) {
+  SwapChainSupportDetails details;
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface,
+                                            &details.capabilities);
+
+  uint32_t formatCount;
+  vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+  if (formatCount) {
+    details.formats.resize(formatCount);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount,
+                                         details.formats.data());
+  }
+
+  uint32_t presentModeCount;
+  vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount,
+                                            nullptr);
+  if (presentModeCount) {
+    details.presentModes.resize(presentModeCount);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(
+        device, surface, &presentModeCount, details.presentModes.data());
+  }
+
+  return details;
+}
+
 void HelloTriangleApplication::createSurface() {
   if (glfwCreateWindowSurface(instance, window, nullptr, &surface) !=
       VK_SUCCESS) {
@@ -216,7 +281,6 @@ void HelloTriangleApplication::mainLoop() {
 // FIXME: something wanted to be freed
 void HelloTriangleApplication::cleanup() {
   vkDestroyDevice(device, nullptr);
-  vkDestroyInstance(instance, nullptr);
   vkDestroySurfaceKHR(instance, surface, nullptr);
   vkDestroyInstance(instance, nullptr);
   glfwDestroyWindow(window);
