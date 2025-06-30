@@ -12,6 +12,10 @@ const uint32_t HEIGHT = 600;
 struct QueueFamilyIndices {
   std::optional<uint32_t> graphicsFamily;
   std::optional<uint32_t> presentFamily;
+
+  bool isComplete() {
+    return graphicsFamily.has_value() && presentFamily.has_value();
+  }
 };
 
 struct SwapChainSupportDetails {
@@ -31,6 +35,7 @@ class HelloTriangleApplication {
   VkQueue graphicsQueue;
   VkQueue presentQueue;
   VkSurfaceKHR surface;
+  VkSwapchainKHR swapChain;
 
   const std::vector<const char*> deviceExtensions = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -46,17 +51,23 @@ class HelloTriangleApplication {
   void initVulkan();
   void createInstance();
   void mainLoop();
+  void createSurface();
+  void createLogicalDevice();
+  void createSwapChain();
   void cleanup();
 
   void pickPhysicalDevice();
   bool isDeviceSuitable(VkPhysicalDevice device);
   QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-  void createLogicalDevice();
   void checkAvailableExtensions();
   bool checkValidationLayerSupport();
-  void createSurface();
   bool checkDeviceExtensionSupport(VkPhysicalDevice device);
   SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+  VkSurfaceFormatKHR chooseSwapSurfaceFormat(
+      const std::vector<VkSurfaceFormatKHR>& availableFormats);
+  VkPresentModeKHR chooseSwapPresentMode(
+      const std::vector<VkPresentModeKHR>& presentModes);
+  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
  public:
   void Run();
