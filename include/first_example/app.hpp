@@ -36,6 +36,10 @@ class HelloTriangleApplication {
   VkQueue presentQueue;
   VkSurfaceKHR surface;
   VkSwapchainKHR swapChain;
+  std::vector<VkImage> swapChainImages;
+  VkFormat swapChainImageFormat;
+  VkExtent2D swapChainExtent;
+  std::vector<VkImageView> swapChainImageViews;
 
   const std::vector<const char*> deviceExtensions = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -54,6 +58,7 @@ class HelloTriangleApplication {
   void createSurface();
   void createLogicalDevice();
   void createSwapChain();
+  void createImageView();
   void cleanup();
 
   void pickPhysicalDevice();
